@@ -1,0 +1,4 @@
+When you install it, you might see this error:
+>> Can't create admin user:
+>> Invalid date_gmt value in CHV\Stat::track
+https://chevereto.com/community/threads/cant-create-admin-user-invalid-date_gmt-value-in-chv-stat-track.8870/
