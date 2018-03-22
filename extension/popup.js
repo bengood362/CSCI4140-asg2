@@ -19,5 +19,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }) 
   }
   upload_button.onclick=upload;
-
 });

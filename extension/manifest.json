@@ -7,12 +7,14 @@
   "icons": {"80":"p.png"},
 
   "background": {
-    "scripts": ["background.js"]
+    "scripts": [
+      "background.js"]
   },
   "content_scripts":[
     {
-      "matches": ["http://0.0.0.0:8080/Chevereto-Free/*", "http://0.0.0.0:8080/*"],
-      "js": ["contents.js"]
+      "matches": ["http://*/Chevereto-Free/*", "http://localhost:8080/*"],
+      "js": ["thirdParty/jquery-3.3.1.min.js", "contents.js", "thirdParty/jquery-ui.min.js", "thirdParty/caman.full.min.js"],
+      "run_at": "document_end"
     }
   ],
 
