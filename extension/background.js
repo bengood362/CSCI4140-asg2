@@ -2,6 +2,7 @@
 function saveURL(info,tab) {
   console.log(info)
   current_queue = chrome.storage.local.get(["upload_queue"], function(result){
+    /*
     if(info.srcUrl.includes("https://") || info.srcUrl.includes("http://")){
       var img = new Image()
       img.src = info.srcUrl
@@ -22,13 +23,14 @@ function saveURL(info,tab) {
         chrome.storage.local.set({"upload_queue": new_queue})
       }
     }else{
-      if(result.upload_queue && result.upload_queue.constructor === Array){
-        var new_queue = result.upload_queue.concat([info.srcUrl])
-      }else{
-        var new_queue = [info.srcUrl]
-      }
-      chrome.storage.local.set({"upload_queue": new_queue})
+    */
+    if(result.upload_queue && result.upload_queue.constructor === Array){
+      var new_queue = result.upload_queue.concat([info.srcUrl])
+    }else{
+      var new_queue = [info.srcUrl]
     }
+    chrome.storage.local.set({"upload_queue": new_queue})
+    //}
     console.log("saved, length now: ",new_queue.length)
   })
 }

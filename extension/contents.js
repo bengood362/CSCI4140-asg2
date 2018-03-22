@@ -326,6 +326,20 @@ $(document).ready(function(){
                   </div>
               </div>`
             $(filter).insertAfter(edit_button)
+            // resume filter
+            for(var filter_index in all_filters){
+              filter_name = all_filters[filter_index]
+              try{
+                eval(`filter_value = _${filter_name}${data_id};`)
+              }catch(err){
+                var filter_value='';
+              }
+              console.log(filter_value);
+              if (filter_value){
+                $(`input#filter${data_id}[data-filter=${filter_name}]`).prop("value", filter_value)
+                $(`#${filter_name}${data_id}`).html(`${filter_value}`);
+              }
+            }
             // Preset filter setting
             $(`#PresetFilters a`).on("click", function(){
               var preset = $(this).data("preset")
@@ -593,11 +607,10 @@ $(document).ready(function(){
               Caman(`#preset-example`, function(){
                 this.reset()
                 for(var filter_index in all_filters){
-                  var value = $(`#${all_filters[filter_index]}${data_id}`).html()
+                  var filter_name = all_filters[filter_index]
+                  var value = $(`#${filter_name}${data_id}`).html()
                   if(value){
-                    // console.log(`#${all_filters[filter_index]}${data_id}`)
-                    // console.log(`this.${all_filters[filter_index]}(${value});`)
-                    eval(`this.${all_filters[filter_index]}(${value});`)
+                    eval(`this.${filter_name}(${value});`)
                   }
                 }
                 this.render()
@@ -623,16 +636,20 @@ $(document).ready(function(){
                 }
               })
             })
+            // finish edit button
             $(`#finish-edit${data_id}`).on("click", function(){
               Caman(`#canvas${data_id}`, function(){
                 console.log("applying changes")
                 for(var filter_index in all_filters){
                   var filter_name = all_filters[filter_index]
-                  var value = $(`#${all_filters[filter_index]}${data_id}`).html()
+                  var value = $(`#${filter_name}${data_id}`).html()
+                  console.log(value)
                   if(value){
                     // console.log(`#${all_filters[filter_index]}${data_id}`)
                     // console.log(`this.${all_filters[filter_index]}(${value});`)
-                    eval(`this.${all_filters[filter_index]}(${value});`)
+                    eval(`this.${filter_name}(${value});`)
+                    eval(`_${filter_name}${data_id} = ${value};`)
+                    
                   }
                 }
                 this.render(function(){
@@ -645,9 +662,9 @@ $(document).ready(function(){
                     console.log("CHV.fn.uploader",CHV.fn.uploader);
                     CHV.fn.uploader.files[${data_id}] = new_file;
                   </script>`).appendTo($("body"))
+                  // then remove fullscreen modal
+                  $(`#fullscreen-modal${data_id}`).remove()
                 })
-                // then remove fullscreen modal
-                $(`#fullscreen-modal${data_id}`).remove()
               })
               edit_button.prop("setup", false);
             });
