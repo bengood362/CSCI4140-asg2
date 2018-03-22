@@ -1,5 +1,5 @@
 // contents.js
-console.log("hello from contents.js");
+
 var container_input_camera = $("")
 var input = '<input id="anywhere-upload-input" data-action="anywhere-upload-input" class="hidden-visibility" type="file" accept=".jpg,.png,.bmp,.gif,.jpeg" multiple>'
 var camera_input = '<input id="anywhere-upload-input-camera" data-action="anywhere-upload-input" class="hidden-visibility" type="file" capture="camera" accept="image/*">'
@@ -7,7 +7,23 @@ var all_filters = ['brightness', 'contrast', 'saturation', 'vibrance', 'exposure
 var preset_filters = ['Vintage', 'Lomo', 'Clarity', 'Sin City', 'Sunrise', 'Cross Process', 'Orange Peel', 'Love', 'Grungy', 'Jarques', 'Pinhole', 'Old Boot', 'Glowing Sun', 'Hazy Days', 'Her Majesty', 'Nostalgia', 'Hemingway', 'Concentrate']
 
 $(document).ready(function(){
-  console.log("Document ready");
+  $(`<script>
+    function dataURItoBlob(dataURI) {
+      // convert base64 to raw binary data held in a string
+      // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this
+      var byteString = atob(dataURI.split(',')[1]);
+      // separate out the mime component
+      var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+      // write the bytes of the string to an ArrayBuffer
+      var ab = new ArrayBuffer(byteString.length);
+      var ia = new Uint8Array(ab);
+      for (var i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+      }
+      return new Blob([ab], {type: mimeString});
+    }
+  </script>`).appendTo($("body"))
+  // console.log("Document ready");
   // add observer on the unordered list #anywhere-upload-queue
   var MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
   var target = $("#anywhere-upload-queue")
@@ -619,7 +635,18 @@ $(document).ready(function(){
                     eval(`this.${all_filters[filter_index]}(${value});`)
                   }
                 }
-                this.render()
+                this.render(function(){
+                  // get from canvas after caman apply changes
+                  $(`<script>
+                    var canvas = document.getElementById("canvas${data_id}");
+                    console.log("canvas",canvas);
+                    var new_file = dataURItoBlob(canvas.toDataURL("image/jpeg"));
+                    console.log("new_file",new_file);
+                    console.log("CHV.fn.uploader",CHV.fn.uploader);
+                    CHV.fn.uploader.files[${data_id}] = new_file;
+                  </script>`).appendTo($("body"))
+                })
+                // then remove fullscreen modal
                 $(`#fullscreen-modal${data_id}`).remove()
               })
               edit_button.prop("setup", false);

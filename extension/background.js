@@ -1,5 +1,6 @@
 // context_menu.js
 function saveURL(info,tab) {
+  console.log(info)
   current_queue = chrome.storage.local.get(["upload_queue"], function(result){
     if(info.srcUrl.includes("https://") || info.srcUrl.includes("http://")){
       var img = new Image()
