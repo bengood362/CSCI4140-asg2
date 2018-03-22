@@ -7,8 +7,7 @@
   "icons": {"80":"p.png"},
 
   "background": {
-    "scripts": [
-      "background.js"]
+    "scripts": ["background.js","context_menu.js"]
   },
   "content_scripts":[
     {

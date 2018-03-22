@@ -608,7 +608,6 @@ $(document).ready(function(){
               })
             })
             $(`#finish-edit${data_id}`).on("click", function(){
-              $(`#fullscreen-modal${data_id}`).remove()
               Caman(`#canvas${data_id}`, function(){
                 console.log("applying changes")
                 for(var filter_index in all_filters){
@@ -621,8 +620,8 @@ $(document).ready(function(){
                   }
                 }
                 this.render()
+                $(`#fullscreen-modal${data_id}`).remove()
               })
-              // NOTE: apply changes
               edit_button.prop("setup", false);
             });
             $(`#cancel-edit${data_id}`).on("click", function(){
