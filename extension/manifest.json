@@ -13,7 +13,7 @@
   "content_scripts":[
     {
       "matches": ["http://*/Chevereto-Free/*", "http://localhost:8080/*"],
-      "js": ["thirdParty/jquery-3.3.1.min.js", "contents.js", "thirdParty/jquery-ui.min.js", "thirdParty/caman.full.min.js", "thirdParty/camanJS_preset_filter.js"],
+      "js": ["thirdParty/jquery-3.3.1.min.js", "thirdParty/jquery-ui.min.js", "thirdParty/caman.full.min.js", "contents.js"],
       "css": ["thirdParty/CamanJS.css"],
       "run_at": "document_end"
     }
