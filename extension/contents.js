@@ -6,6 +6,262 @@ var camera_input = '<input id="anywhere-upload-input-camera" data-action="anywhe
 var all_filters = ['brightness', 'contrast', 'saturation', 'vibrance', 'exposure', 'hue', 'sepia', 'gamma', 'noise', 'clip', 'sharpen', 'stackBlur']
 var preset_filters = ['Vintage', 'Lomo', 'Clarity', 'Sin City', 'Sunrise', 'Cross Process', 'Orange Peel', 'Love', 'Grungy', 'Jarques', 'Pinhole', 'Old Boot', 'Glowing Sun', 'Hazy Days', 'Her Majesty', 'Nostalgia', 'Hemingway', 'Concentrate']
 
+var uploader_add = `function(e, urls) {
+  var md5;
+  if (!this.canAdd) {
+      var e = e.originalEvent;
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+  }
+  $fileinput = $(this.selectors.file);
+  $fileinput.replaceWith($fileinput = $fileinput.clone(true));
+  var item_queue_template = $(this.selectors.upload_item_template).html();
+  var files = [];
+  if (typeof urls == typeof undefined) {
+      var e = e.originalEvent;
+      e.preventDefault();
+      e.stopPropagation();
+      files = e.dataTransfer || e.target;
+      files = $.makeArray(files.files);
+      if (e.clipboard) {
+          md5 = PF.fn.md5(e.dataURL);
+          if ($.inArray(md5, this.clipboardImages) != -1) {
+              return null;
+          }
+          this.clipboardImages.push(md5);
+      }
+      var failed_files = [];
+      for (var i = 0; i < files.length; i++) {
+          var file = files[i];
+          var image_type_str;
+          if (typeof file.type == "undefined" || file.type == "") {
+              image_type_str = file.name.substr(file.name.lastIndexOf('.') + 1).toLowerCase();
+          } else {
+              image_type_str = file.type.replace("image/", "");
+          }
+          if (file.size > CHV.obj.config.image.max_filesize.getBytes()) {
+              failed_files.push({
+                  uid: i,
+                  name: file.name.truncate_middle() + " - " + PF.fn._s("File too big.")
+              });
+              continue;
+          }
+          if (CHV.obj.config.upload.image_types.indexOf(image_type_str) == -1 && /android/i.test(navigator.userAgent) == false) {
+              failed_files.push({
+                  uid: i,
+                  name: file.name.truncate_middle() + " - " + PF.fn._s("Invalid or unsupported file format.")
+              });
+              continue;
+          }
+          if (md5) {
+              file.md5 = md5;
+          }
+          file.fromClipboard = e.clipboard == true;
+          file.uid = i;
+      }
+      for (var i = 0; i < failed_files.length; i++) {
+          var failed_file = failed_files[i];
+          files.splice(failed_file.id, 1);
+      }
+      if (failed_files.length > 0 && files.length == 0) {
+          var failed_message = '';
+          for (var i = 0; i < failed_files.length; i++) {
+              failed_message += "<li>" + failed_files[i].name + "</li>";
+          }
+          PF.fn.modal.simple({
+              title: PF.fn._s("Some files couldn't be added"),
+              message: "<ul>" + "<li>" + failed_message + "</ul>"
+          });
+          return;
+      }
+      if (files.length == 0) {
+          return;
+      }
+  } else {
+      urls = urls.replace(/(<([^>]+)>)/g, '').replace(/(\\[([^\\]]+)\\])/g, '');
+      files = urls.match_urls();
+      if (!files)
+          return;
+      files = files.array_unique();
+      files = $.map(files, function(file, i) {
+          return {
+              uid: i,
+              name: file,
+              url: file
+          };
+      });
+  }
+  if ($.isEmptyObject(this.files)) {
+      for (var i = 0; i < files.length; i++) {
+          this.files[files[i].uid] = files[i];
+          this.filesAddId++;
+      }
+  } else {
+      var currentfiles = [];
+      for (var key in this.files) {
+          if (typeof this.files[key] == "undefined" || typeof this.files[key] == "function")
+              continue;
+          currentfiles.push(encodeURI(this.files[key].name));
+      }
+      files = $.map(files, function(file, i) {
+          if ($.inArray(encodeURI(file.name), currentfiles) != -1) {
+              return null;
+          }
+          file.uid = CHV.fn.uploader.filesAddId + i;
+          CHV.fn.uploader.filesAddId++;
+          return file;
+      });
+      for (var i = 0; i < files.length; i++) {
+          this.files[files[i].uid] = files[i];
+      }
+  }
+  $(this.selectors.queue, this.selectors.root).append(item_queue_template.repeat(files.length));
+  $(this.selectors.queue + " " + this.selectors.queue_item + ":not([data-id])", this.selectors.root).hide();
+  $(this.selectors.close_cancel, this.selectors.root).hide().each(function() {
+      if ($(this).data("action") == "close-upload")
+          $(this).show();
+  });
+  var failed_before = failed_files
+    , failed_files = []
+    , j = 0
+    , default_options = {
+      canvas: true,
+      maxWidth: 590,
+      crossOrigin: "Anonymous"
+  };
+  function CHVLoadImage(i) {
+      if (typeof i == typeof undefined) {
+          var i = 0;
+      }
+      if (!(i in files)) {
+          PF.fn.loading.destroy("fullscreen");
+          return;
+      }
+      var file = files[i];
+      $(CHV.fn.uploader.selectors.queue_item + ":not([data-id]) .load-url", CHV.fn.uploader.selectors.queue)[typeof file.url !== "undefined" ? "show" : "remove"]();
+      loadImage.parseMetaData(file.url ? file.url : file, function(data) {
+          $(CHV.fn.uploader.selectors.queue_item + ":not([data-id]) .preview:empty", CHV.fn.uploader.selectors.queue).first().closest("li").attr("data-id", file.uid);
+          loadImage(file.url ? file.url : file, function(img) {
+              ++j;
+              var $queue_item = $(CHV.fn.uploader.selectors.queue_item + "[data-id=" + (file.uid) + "]", CHV.fn.uploader.selectors.queue);
+              if (img.type === "error") {
+                  failed_files.push({
+                      uid: file.uid,
+                      name: file.name.truncate_middle()
+                  });
+              } else {
+                  if (!$("[data-group=upload-queue]", CHV.fn.uploader.selectors.root).is(":visible")) {
+                      $("[data-group=upload-queue]", CHV.fn.uploader.selectors.root).css("display", "block");
+                  }
+                  var mimetype = "image/jpeg";
+                  if (typeof data.buffer !== typeof undefined) {
+                      var buffer = (new Uint8Array(data.buffer)).subarray(0, 4);
+                      var header = "";
+                      for (var i = 0; i < buffer.length; i++) {
+                          header += buffer[i].toString(16);
+                      }
+                      var header_to_mime = {
+                          '89504e47': 'image/png',
+                          '47494638': 'image/gif',
+                          'ffd8ffe0': 'image/jpeg',
+                      };
+                      $.each(['ffd8ffe1', 'ffd8ffe2'], function(i, v) {
+                          header_to_mime[v] = header_to_mime['ffd8ffe0'];
+                      });
+                      if (typeof header_to_mime[header] !== typeof undefined) {
+                          mimetype = header_to_mime[header];
+                      }
+                  }
+                  var title = null;
+                  if (typeof file.name !== typeof undefined) {
+                      var basename = PF.fn.baseName(file.name);
+                      title = $.trim(basename.substring(0, 100).capitalizeFirstLetter());
+                  }
+                  CHV.fn.uploader.files[file.uid].parsedMeta = {
+                      title: title,
+                      width: img.originalWidth,
+                      height: img.originalHeight,
+                      mimetype: mimetype,
+                  };
+                  $queue_item.show();
+                  $("[data-group=upload-queue-ready]", CHV.fn.uploader.selectors.root).show();
+                  $("[data-group=upload]", CHV.fn.uploader.selectors.root).hide();
+                  $queue_item.find(".load-url").remove();
+                  $queue_item.find(".preview").removeClass("soft-hidden").show().append(img);
+                  $img = $queue_item.find(".preview").find("img,canvas");
+                  $img.attr("class", "canvas");
+                  queue_item_h = $queue_item.height();
+                  queue_item_w = $queue_item.width();
+                  var img_w = parseInt($img.attr("width")) || $img.width();
+                  var img_h = parseInt($img.attr("height")) || $img.height();
+                  var img_r = img_w / img_h;
+                  $img.hide();
+                  if (img_w > img_h || img_w == img_h) {
+                      var queue_img_h = img_h < queue_item_h ? img_h : queue_item_h;
+                      if (img_w > img_h) {
+                          $img.height(queue_img_h).width(queue_img_h * img_r);
+                      }
+                  }
+                  if (img_w < img_h || img_w == img_h) {
+                      var queue_img_w = img_w < queue_item_w ? img_w : queue_item_w;
+                      if (img_w < img_h) {
+                          $img.width(queue_img_w).height(queue_img_w / img_r);
+                      }
+                  }
+                  if (img_w == img_h) {
+                      $img.height(queue_img_h).width(queue_img_w);
+                  }
+                  $img.css({
+                      marginTop: -$img.height() / 2,
+                      marginLeft: -$img.width() / 2
+                  }).show();
+                  CHV.fn.uploader.boxSizer();
+              }
+              if (j == files.length) {
+                  if (typeof failed_before !== "undefined") {
+                      failed_files = failed_files.concat(failed_before);
+                  }
+                  PF.fn.loading.destroy("fullscreen");
+                  if (failed_files.length > 0) {
+                      var failed_message = "";
+                      for (var i = 0; i < failed_files.length; i++) {
+                          failed_message += "<li>" + failed_files[i].name + "</li>";
+                          delete CHV.fn.uploader.files[failed_files[i].uid];
+                          console.log(failed_files)
+                          console.log(CHV.fn.uploader.files)
+                          $("li[data-id=" + failed_files[i].uid + "]", CHV.fn.uploader.selectors.queue).find("[data-action=cancel]").click();
+                      }
+                      PF.fn.modal.simple({
+                          title: PF.fn._s("Some files couldn't be added"),
+                          message: '<ul>' + failed_message + '</ul>'
+                      });
+                  } else {
+                      CHV.fn.uploader.focus();
+                  }
+                  CHV.fn.uploader.boxSizer();
+              }
+          }, $.extend({}, default_options, {
+              orientation: data.exif ? data.exif.get("Orientation") : 1
+          }));
+          setTimeout(function() {
+              CHVLoadImage(i + 1);
+          }, 25);
+      });
+  }
+  PF.fn.loading.fullscreen();
+  CHVLoadImage();
+  this.queueSize();
+}`
+
+// chrome.webRequest.onBeforeSendHeaders.addListener(
+//   function(details) {
+//     details.requestHeaders['Allow-Control-Allow-Origin']='*';
+//     return {requestHeaders: details.requestHeaders};
+//   },
+//   {},
+// ["blocking"]);
+
 $(document).ready(function(){
   $(`<script>
     function dataURItoBlob(dataURI) {
@@ -22,6 +278,8 @@ $(document).ready(function(){
       }
       return new Blob([ab], {type: mimeString});
     }
+    var uploader_add = ${uploader_add}
+    CHV.fn.uploader.add = uploader_add
   </script>`).appendTo($("body"))
   // console.log("Document ready");
   // add observer on the unordered list #anywhere-upload-queue
@@ -42,14 +300,14 @@ $(document).ready(function(){
   
   // add receiver on the unordered list #anywhere-upload-queue
   target.on("imageAppend", function(){
-    console.log("this", this)
+    // console.log("this", this)
     var li_target = $("#anywhere-upload-queue li");
     // will check everytime when element inserted
     target.children("li").each(function(){
       if (!$(this).prop("setup")){ // setup already
         that = this;
         $(this).prop("setup", true);
-        console.log("target each this THEN ", $(this))
+        // console.log("target each this THEN ", $(this))
         // 1. if edit_button not setup, then click edit_button will setup filters
         // 2. if edit_button is setup, then click edit_button will do nothing
         var edit_button = $('<button class="edit-button" type="button" style="background-color: yellow; padding=5px;">Edit Image with CamanJS</button>')
@@ -60,6 +318,14 @@ $(document).ready(function(){
             var data_id = edit_button.parent().data("id")
             var new_canvas = `<canvas width="250" height="250" class="canvas" style="display: block; height: 100px; width: 100px; margin-top: -50px; margin-left: -50px; " data-caman-id="0" id="canvas_full${data_id}" data-caman-hidpi-disabled></canvas>`
             var old_canvas = $(`.queue-item[data-id=${data_id}] .preview.block canvas`)
+            if($(`#h_canvas${data_id}`).length==0){
+              var hidden_canvas = old_canvas.clone()
+              h_canvas_style = hidden_canvas.prop('style')
+              h_canvas_style['visibility']='hidden';
+              hidden_canvas.prop("style",h_canvas_style)
+              hidden_canvas.prop(`id`, `h_canvas${data_id}`)
+              hidden_canvas.insertAfter(old_canvas)
+            }
             old_canvas.prop(`id`, `canvas${data_id}`)
             old_canvas.attr("data-caman-hidpi-disabled", true)
             var dataurl = $(`#canvas${data_id}`)[0].toDataURL()
@@ -334,7 +600,7 @@ $(document).ready(function(){
               }catch(err){
                 var filter_value='';
               }
-              console.log(filter_value);
+              // console.log(filter_name, filter_value);
               if (filter_value){
                 $(`input#filter${data_id}[data-filter=${filter_name}]`).prop("value", filter_value)
                 $(`#${filter_name}${data_id}`).html(`${filter_value}`);
@@ -343,7 +609,7 @@ $(document).ready(function(){
             // Preset filter setting
             $(`#PresetFilters a`).on("click", function(){
               var preset = $(this).data("preset")
-              console.log(`${preset} is clicked`)
+              // console.log(`${preset} is clicked`)
               filter_callback=function(){
                 this.reset()
                 if (preset == "vintage"){
@@ -639,17 +905,16 @@ $(document).ready(function(){
             // finish edit button
             $(`#finish-edit${data_id}`).on("click", function(){
               Caman(`#canvas${data_id}`, function(){
-                console.log("applying changes")
+                // console.log("applying changes")
                 for(var filter_index in all_filters){
                   var filter_name = all_filters[filter_index]
                   var value = $(`#${filter_name}${data_id}`).html()
-                  console.log(value)
+                  // console.log(filter_name,value)
                   if(value){
                     // console.log(`#${all_filters[filter_index]}${data_id}`)
                     // console.log(`this.${all_filters[filter_index]}(${value});`)
                     eval(`this.${filter_name}(${value});`)
                     eval(`_${filter_name}${data_id} = ${value};`)
-                    
                   }
                 }
                 this.render(function(){
@@ -671,6 +936,14 @@ $(document).ready(function(){
             $(`#cancel-edit${data_id}`).on("click", function(){
               Caman(`#canvas${data_id}`, function(){
                 this.reset();
+                for(var filter_index in all_filters){
+                  var filter_name = all_filters[filter_index]
+                  try{
+                    eval(`this.${filter_name}(_${filter_name}${data_id});`)
+                  }catch(err){
+
+                  }
+                }
                 this.render();
               })
               $(`#fullscreen-modal${data_id}`).remove()
