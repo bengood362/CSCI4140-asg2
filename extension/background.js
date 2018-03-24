@@ -53,7 +53,13 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             urls.value = queue_str;
             urls.innerHTML = queue_str;
             var pasteURLscr = document.createElement('script');
-            pasteURLscr.value = \`CHV.fn.uploader.pasteURL();\`
+            pasteURLscr.innerHTML = \`
+              CHV.fn.uploader.toggle(); 
+              // wait 500ms
+              setTimeout(function() {
+                CHV.fn.uploader.pasteURL(); 
+              }, 500);          
+            \`
             document.getElementsByTagName('body')[0].appendChild(pasteURLscr);
           `
           chrome.tabs.executeScript(tab.id, {
