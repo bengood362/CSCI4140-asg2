@@ -1,5 +1,5 @@
 // contents.js
-
+console.log("hihi")
 var container_input_camera = $("")
 var input = '<input id="anywhere-upload-input" data-action="anywhere-upload-input" class="hidden-visibility" type="file" accept=".jpg,.png,.bmp,.gif,.jpeg" multiple>'
 var camera_input = '<input id="anywhere-upload-input-camera" data-action="anywhere-upload-input" class="hidden-visibility" type="file" capture="camera" accept="image/*">'
@@ -80,7 +80,9 @@ var uploader_add = `function(e, urls) {
       }
   } else {
       urls = urls.replace(/(<([^>]+)>)/g, '').replace(/(\\[([^\\]]+)\\])/g, '');
+      console.log("urls",urls)
       files = urls.match_urls();
+      console.log(urls, files);
       if (!files)
           return;
       files = files.array_unique();
@@ -88,7 +90,7 @@ var uploader_add = `function(e, urls) {
           return {
               uid: i,
               name: file,
-              url: file
+              url: 'https://cors-anywhere.herokuapp.com/'+file
           };
       });
   }
@@ -254,6 +256,15 @@ var uploader_add = `function(e, urls) {
   this.queueSize();
 }`
 
+var uploader_pasteURL = `function() {
+  var urls = document.getElementsByName("urls");
+  // console.log("urls", urls[0])
+  var urlvalues = urls[0].defaultValue
+  // console.log("urlvalues", urlvalues);
+  if (urlvalues) {
+      CHV.fn.uploader.add({}, urlvalues);
+  }
+}`
 // chrome.webRequest.onBeforeSendHeaders.addListener(
 //   function(details) {
 //     details.requestHeaders['Allow-Control-Allow-Origin']='*';
@@ -279,7 +290,9 @@ $(document).ready(function(){
       return new Blob([ab], {type: mimeString});
     }
     var uploader_add = ${uploader_add}
-    CHV.fn.uploader.add = uploader_add
+    var uploader_pasteURL = ${uploader_pasteURL}
+    CHV.fn.uploader.add = uploader_add;
+    CHV.fn.uploader.pasteURL = uploader_pasteURL;
   </script>`).appendTo($("body"))
   // console.log("Document ready");
   // add observer on the unordered list #anywhere-upload-queue

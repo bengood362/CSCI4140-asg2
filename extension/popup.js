@@ -11,32 +11,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   var upload_button = document.getElementById('upload-button');
   function upload(){
-    chrome.storage.local.get(['upload_queue'], function(result) {
+    chrome.storage.local.get(["host_name",'upload_queue'], function(result) {
+      var host = result.host_name?result.host_name:"http://localhost/";
+      var newURL = host+"index.php";
       if ($("#show-queue-button").prop('setup')){
-        $("#upload-queue").remove()
-        $("#show-queue-button").prop('setup', false)
+        $("#upload-queue").remove();
+        $("#show-queue-button").prop('setup', false);
       }
-      // process them to dataURL
-      for(var index in result.upload_queue){
-        var srcURL = result.upload_queue[index]
-        if(srcURL.includes("https://") || srcURL.includes("http://")){
-          var img = new Image()
-          img.src = srcURL
-          img.crossOrigin="anonymous"
-          img.onload = function(){
-            var canvas = document.createElement('canvas'), context = canvas.getContext('2d');
-            canvas.width = this.width;
-            canvas.height = this.height;
-            context.drawImage(this, 0, 0, this.width, this.height);
-            var new_url = canvas.toDataURL("image/jpeg")
-            console.log("dataURL from weburl: ", new_url)
-          }
-        }else{
-          console.log("dataURL: ", srcURL)
-        }
-      }
-      // clear queue
-      chrome.storage.local.set({"upload_queue": []})
+      var extensionid = chrome.runtime.id;
+      chrome.runtime.sendMessage(extensionid, {"fromClick": true}, function(){})
     }) 
   }
   upload_button.onclick=upload;

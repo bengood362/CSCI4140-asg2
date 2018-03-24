@@ -39,3 +39,43 @@ chrome.contextMenus.create({
   contexts:["image"], 
   onclick: saveURL,
 });
+
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.fromClick){
+    chrome.storage.local.get(["host_name","upload_queue"], function(result){
+      var newURL = result.host_name?result.host_name:"http://localhost/";
+      chrome.tabs.create({ url: newURL, selected: true }, function(tab){
+        chrome.storage.local.get(["upload_queue"], function(result){
+          var code = `
+            var urls = document.getElementsByName("urls")[0];
+            console.log(urls);
+            queue_str = \`${result.upload_queue.join(" \n")}\`;
+            urls.value = queue_str;
+            urls.innerHTML = queue_str;
+            var pasteURLscr = document.createElement('script');
+            pasteURLscr.value = \`CHV.fn.uploader.pasteURL();\`
+            document.getElementsByTagName('body')[0].appendChild(pasteURLscr);
+          `
+          chrome.tabs.executeScript(tab.id, {
+            // code: `alert(\`${code}\`);`,
+            code: code,
+            runAt: "document_end"
+          }, function(){
+            chrome.storage.local.set({"upload_queue": []}) // clear queue
+          });
+        })
+      });
+      chrome.tabs.executeScript(null, {
+        // code: `alert(\`${code}\`);`,
+        code: code,
+        runAt: "document_end"
+      }, function(){
+        chrome.storage.local.set({"upload_queue": []}) // clear queue
+      });
+    })
+  }
+});
+
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab){
+
+})
