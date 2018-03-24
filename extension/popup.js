@@ -27,7 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
   var queue_button = document.getElementById("show-queue-button");
   function show_queue(){
     chrome.storage.local.get(["upload_queue"], function(result){
-      if(result){
+      console.log(result)
+      try{
         if(!$("#show-queue-button").prop('setup')){
           $(`<div id="upload-queue">Current length: ${result.upload_queue.length}<br><span>${result.upload_queue.join(" ")}</span></div>`).insertAfter($("#show-queue-button"))
           $("#show-queue-button").prop('setup', true)
@@ -35,8 +36,14 @@ document.addEventListener('DOMContentLoaded', function() {
           $("#upload-queue").remove()
           $("#show-queue-button").prop('setup', false)
         }
-      }else{
-        console.log('no link')
+      }catch(err){
+        if(!$("#show-queue-button").prop('setup')){
+          $(`<div id="upload-queue">Current length: 0<br></div>`).insertAfter($("#show-queue-button"))
+          $("#show-queue-button").prop('setup', true)
+        }else{
+          $("#upload-queue").remove()
+          $("#show-queue-button").prop('setup', false)
+        }
       }
     })
   }
