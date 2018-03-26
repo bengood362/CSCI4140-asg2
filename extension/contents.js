@@ -90,7 +90,7 @@ var uploader_add = `function(e, urls) {
           return {
               uid: i,
               name: file,
-              url: 'https://cors-anywhere.herokuapp.com/'+file
+              url: 'http://www.justdoevil.info/fetch.php?url='+file
           };
       });
   }
