@@ -1,5 +1,5 @@
 // contents.js
-console.log("hihi")
+// console.log("hihi")
 var container_input_camera = $("")
 var input = '<input id="anywhere-upload-input" data-action="anywhere-upload-input" class="hidden-visibility" type="file" accept=".jpg,.png,.bmp,.gif,.jpeg" multiple>'
 var camera_input = '<input id="anywhere-upload-input-camera" data-action="anywhere-upload-input" class="hidden-visibility" type="file" capture="camera" accept="image/*">'
@@ -80,9 +80,9 @@ var uploader_add = `function(e, urls) {
       }
   } else {
       urls = urls.replace(/(<([^>]+)>)/g, '').replace(/(\\[([^\\]]+)\\])/g, '');
-      console.log("urls",urls)
+      // console.log("urls",urls)
       files = urls.match_urls();
-      console.log(urls, files);
+      // console.log(urls, files);
       if (!files)
           return;
       files = files.array_unique();
@@ -934,10 +934,10 @@ $(document).ready(function(){
                   // get from canvas after caman apply changes
                   $(`<script>
                     var canvas = document.getElementById("canvas${data_id}");
-                    console.log("canvas",canvas);
+                    // console.log("canvas",canvas);
                     var new_file = dataURItoBlob(canvas.toDataURL("image/jpeg"));
-                    console.log("new_file",new_file);
-                    console.log("CHV.fn.uploader",CHV.fn.uploader);
+                    // console.log("new_file",new_file);
+                    // console.log("CHV.fn.uploader",CHV.fn.uploader);
                     CHV.fn.uploader.files[${data_id}] = new_file;
                   </script>`).appendTo($("body"))
                   // then remove fullscreen modal
